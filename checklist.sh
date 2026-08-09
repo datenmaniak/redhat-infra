@@ -1,0 +1,8 @@
+echo "=== CHECKLIST PRE-VM ==="
+echo "[ ] libvirtd activo: $(systemctl is-active libvirtd)"
+echo "[ ] Red default activa: $(virsh net-info default 2>/dev/null | grep 'Active:' | awk '{print $2}')"
+echo "[ ] Red default autostart: $(virsh net-info default 2>/dev/null | grep 'Autostart:' | awk '{print $2}')"
+echo "[ ] Red lab-internal activa: $(virsh net-info lab-internal 2>/dev/null | grep 'Active:' | awk '{print $2}')"
+echo "[ ] virt-sysprep disponible: $(command -v virt-sysprep >/dev/null 2>&1 && echo 'SI' || echo 'NO')"
+echo "[ ] genisoimage disponible: $(command -v genisoimage >/dev/null 2>&1 && echo 'SI' || echo 'NO')"
+echo "[ ] Espacio en disco: $(df -h $HOME | tail -1 | awk '{print $4}') libres en $HOME"

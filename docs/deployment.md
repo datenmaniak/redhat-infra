@@ -921,3 +921,115 @@ Una vez que `virsh net-list --all` muestre **active + yes** en ambas redes:
 
 
 
+## Snapshots
+
+> ### Es   correcta este comando?
+>
+
+```bash
+virsh snapshot-create-as alma-target-02  --description "Post update-repos" 
+```
+
+
+
+Sí, **la sintaxis es válida**, pero `estás omitiendo el nombre del snapshot`. En ese caso, `virsh` puede generar uno automáticamente, mientras que `"Post update-repos"` se usa como descripción. La documentación define el dominio, nombre y descripción como argumentos del comando, siendo estos últimos opcionales.[libvirt](https://www.libvirt.org/manpages/virsh.html)
+
+Es más claro y recomendable ejecutar:
+
+```bash
+virsh snapshot-create-as alma-target-02 \
+  "post-update-repos" \
+  --description "Post update-repos"
+```
+
+También puedes usar opciones explícitas:
+
+```bash
+virsh snapshot-create-as \
+  --domain alma-target-02 \
+  --name "post-update-repos" \
+  --description "Post update-repos"
+```
+
+Luego puedes verificarlo con:
+
+```
+virsh snapshot-list alma-target-02
+```
+
+Tu comando original:
+
+```bash
+virsh snapshot-create-as alma-target-02 --description "Post update-repos"
+```
+
+Creará el snapshot con un nombre generado automáticamente, si tu versión de `virsh` lo permite; para scripts y administración posterior conviene especificar siempre `--name`.
+
+
+
+### Recomendado:
+
+Para cada una de las VMs
+
+```bash
+ virsh snapshot-create-as alma-rhcsa post-update-repos --description "Post update repos"
+ virsh snapshot-create-as alma-target-02 post-update-repos --description "Post update repos"
+virsh snapshot-create-as alma-security post-update-repos --description "Post update repos"
+
+
+```
+
+### Ver snapshots de una VM:
+
+```bash
+ virsh snapshot-list alma-rhcsa
+ 
+ Name                Creation Time               State
+----------------------------------------------------------
+ post-update-repos   2026-08-10 18:30:44 -0400   running
+
+```
+
+
+
+### Para eliminar un snapshot de `alma-target-02`
+
+**Primero lista sus nombres exactos:**
+
+```bash
+virsh snapshot-list alma-target-02
+```
+
+Luego elimínalo indicando el nombre:
+
+```bash
+virsh snapshot-delete alma-target-02 post-update-repos
+```
+
+La sintaxis oficial es `snapshot-delete dominio snapshot`; al eliminarlo normalmente también se eliminan los datos asociados al snapshot, no solo sus metadatos.[libvirt](https://www.libvirt.org/manpages/virsh.html)
+
+## Opciones útiles
+
+Eliminar el snapshot actual:
+
+```bash
+virsh snapshot-delete alma-target-02 --current
+```
+
+Eliminar un snapshot y todos sus descendientes:
+
+```bash
+virsh snapshot-delete alma-target-02 post-update-repos --children
+```
+
+Eliminar únicamente la metadata de libvirt, conservando los datos del snapshot:
+
+```bash
+
+virsh snapshot-delete alma-target-02 post-update-repos --metadata
+```
+
+Ten cuidado con `--children`: puede borrar toda una cadena de snapshots. Si creaste el snapshot con nombre automático, usa el nombre que aparezca en `virsh snapshot-list`, no la descripción.
+
+
+

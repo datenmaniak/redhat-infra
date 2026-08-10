@@ -64,6 +64,12 @@ nano ./ansible-lab/update_repos.yml
           {% endif %}
 ```
 
+#### Corrida:
+
+```bash 
+ansible-playbook -i inventory.yml update_repos.yml
+```
+
 
 
 ---
@@ -121,6 +127,12 @@ nano ./ansible-lab/update_system.yml
     - name: 4. Limpiar caché (post-actualización)
       dnf:
         clean: all
+```
+
+#### Corrida:
+
+```bash 
+ansible-playbook -i inventory.yml update_system.yml
 ```
 
 

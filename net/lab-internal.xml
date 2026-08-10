@@ -1,0 +1,9 @@
+<network>
+  <name>lab-internal</name>
+  <bridge name='virbr11' stp='on' delay='0'/>
+  <ip address='10.10.10.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='10.10.10.10' end='10.10.10.50'/>
+    </dhcp>
+  </ip>
+</network>

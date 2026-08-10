@@ -227,10 +227,11 @@ Crea dos redes virtuales en libvirt:
 
 ### Crear red interna aislada
 ```bash
-cat > ./lab-internal.xml << 'EOF'
+mkdir net
+cat > ./net/lab-internal.xml << 'EOF'
 <network>
   <name>lab-internal</name>
-  <bridge name='virbr1' stp='on' delay='0'/>
+  <bridge name='virbr11' stp='on' delay='0'/>
   <ip address='10.10.10.1' netmask='255.255.255.0'>
     <dhcp>
       <range start='10.10.10.10' end='10.10.10.50'/>
@@ -243,7 +244,7 @@ EOF
 
 
 ```bash
-sudo virsh net-define ./lab-internal.xml
+sudo virsh net-define ./net/lab-internal.xml
 sudo virsh net-start lab-internal
 sudo virsh net-autostart lab-internal
 ```
@@ -266,11 +267,7 @@ sudo virsh net-autostart lab-internal
 
 ####  [setup-redhat-lab.sh](/main/setup-redhat-lab.sh)
 
-
-
 Utiliza `nano`,  `vim` o su editor favorito
-
-
 
 ```bash
 nano setup-redhat-lab.sh
@@ -284,9 +281,6 @@ Ejecuta
 ```bash
 ./setup-redhat-lab.sh
 ```
-
-
-----
 
 
 
@@ -658,16 +652,20 @@ systemctl reboot
 #### Paso 2: Crear la red `default` de libvirt
 
 
+
+
 ```bash
 # Verificar si existe
 virsh net-list --all
 
+mkdir net
+
 # Si NO aparece 'default', créala:
-cat > default-net.xml << 'EOF'
+cat > ./net/default-net.xml << 'EOF'
 <network>
   <name>default</name>
   <forward mode='nat'/>
-  <bridge name='virbr0' stp='on' delay='0'/>
+  <bridge name='virbr10' stp='on' delay='0'/>
   <ip address='192.168.122.1' netmask='255.255.255.0'>
     <dhcp>
       <range start='192.168.122.2' end='192.168.122.254'/>
@@ -676,7 +674,7 @@ cat > default-net.xml << 'EOF'
 </network>
 EOF
 
-virsh net-define /tmp/default-net.xml
+virsh net-define ./net/default-net.xml
 virsh net-start default
 virsh net-autostart default
 ```
@@ -696,6 +694,13 @@ done
 # Borrar archivos huérfanos
 rm -f *.iso *.qcow2
 ```
+
+
+
+#### Si este script no funciona, descargue estos:
+
+- [Elimina todas las VMs y sus configuraciones **KVM/QEMU** ](/clean/cleanup-kvm-vms.sh)
+- [Limpieza forzada para KVM](/clean/cleanup-force.sh)
 
 
 

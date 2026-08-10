@@ -1,0 +1,31 @@
+---
+- name: Mantenimiento Ligero - Actualizar Repositorios (Red Hat)
+  hosts: all
+  become: yes
+  serial: 1  # Mantenido por consistencia
+
+  tasks:
+    - name: 1. Actualizar caché de repositorios
+      dnf:
+        update_cache: yes
+      # Este módulo ya maneja los códigos de retorno correctamente
+
+    - name: 2. Limpieza de caché antigua
+      dnf:
+        clean: all
+
+    - name: 3. Verificar actualizaciones disponibles
+      command: dnf check-update
+      register: updates_available
+      changed_when: updates_available.rc == 100
+      failed_when: updates_available.rc not in [0, 100]
+
+    - name: 4. Reportar estado
+      debug:
+        msg: |
+          {{ inventory_hostname }} - Repositorios sincronizados
+          {% if updates_available.rc == 100 %}
+          ⚠️ Hay {{ updates_available.stdout_lines | length }} actualizaciones disponibles
+          {% else %}
+          ✅ Sistema actualizado
+          {% endif %}

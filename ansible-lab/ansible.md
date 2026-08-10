@@ -67,7 +67,7 @@ nano ./ansible-lab/update_repos.yml
 #### Corrida:
 
 ```bash 
-ansible-playbook -i inventory.yml update_repos.yml
+ansible-playbook -i inventory.ini update_repos.yml
 ```
 
 
@@ -132,7 +132,7 @@ nano ./ansible-lab/update_system.yml
 #### Corrida:
 
 ```bash 
-ansible-playbook -i inventory.yml update_system.yml
+ansible-playbook -i inventory.ini update_system.yml
 ```
 
 

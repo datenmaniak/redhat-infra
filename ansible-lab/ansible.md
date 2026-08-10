@@ -299,8 +299,6 @@ ansible-playbook -i inventory.ini update_repos.yml -l alma-rhcsa
 
 ### 4. **Usando tags (si agregas tags a tus tareas)**
 
-bash
-
 ```
 # Ejecutar solo tareas con tag específico
 ansible-playbook -i inventory.ini update_repos.yml --tags "clean"

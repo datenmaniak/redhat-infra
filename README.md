@@ -10,14 +10,13 @@ Sí se quiere y sí el lector se inclina por la lectura, la *clase rápida* y el
 
 Siendo breve, los  enlaces a la acción inmediata.
 
-- 
-  ####  [Hoja de Ruta / Roadmap](docs/roadmap.md)
-
+- ####  [Hoja de Ruta / Roadmap](docs/roadmap.md)
 - ####  [Despliegue elegido](docs/deployment.md)
-
 - ####  [Alternativa Proxmox](docs/proxmox-deploy.md)
+- ### [Ansible](./ansible-lab/ansible.md)
 
 
+---
 
 
 ## 🎓 Clase Rápida: Ecosistema Linux Basado en Red Hat

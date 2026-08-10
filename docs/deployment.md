@@ -348,7 +348,7 @@ done
 virsh console alma-rhcsa"
 
 # Conectar por SSH:
-ssh -i ~/.ssh/<llave> labadmin@IP 
+ssh -i ~/.ssh/id_ed25519 labadmin@IP 
 ```
 ```bash
 # Ejemplo: en mi caso utilizando mi propia llave SSH | datenmaniak 

@@ -2,7 +2,7 @@
 - name: Mantenimiento Completo - Actualizar Sistema (Red Hat)
   hosts: all
   become: yes
-  serial: 1  # ¡CRÍTICO! Proteger el clúster
+  serial: "{{ update_serial | default(1) }}"  # Usa la variable del inventario
 
   tasks:
     - name: 1. Actualizar todos los paquetes
@@ -10,23 +10,29 @@
         name: '*'
         state: latest
         update_cache: yes
-        autoremove: yes  # Ya integrado en una sola tarea
-      register: upgrade_result
+        # IMPORTANTE: NO usar autoremove con state: latest
+      register: upgrade_result  # register va aquí, NO dentro del módulo
 
-    - name: 2. Verificar si requiere reinicio
+    - name: 2. Limpieza de paquetes obsoletos (autoremove separado)
+      dnf:
+        autoremove: yes
+      register: autoremove_result
+      when: upgrade_result is defined  # Ejecutar solo si el upgrade fue exitoso
+
+    - name: 3. Verificar si requiere reinicio
       command: needs-restarting -r
       register: reboot_check
       failed_when: False
       changed_when: reboot_check.rc == 1
 
-    - name: 3. Alertar sobre reinicio necesario
+    - name: 4. Alertar sobre reinicio necesario
       debug:
         msg: |
           ⚠️ {{ inventory_hostname }} REQUIERE REINICIO
           Motivo: Actualizaciones de Kernel o bibliotecas críticas
       when: reboot_check.rc == 1
 
-    - name: 4. Limpiar caché (post-actualización)
-       command: dnf clean all
+    - name: 5. Limpiar caché (post-actualización)
+      command: dnf clean all
       register: clean_result
       changed_when: "'0 files removed' not in clean_result.stdout"

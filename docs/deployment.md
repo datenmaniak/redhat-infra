@@ -462,9 +462,44 @@ EOF
 ansible -i inventory.ini all -m ping
 ```
 
-> Las IPs las obtienes con `virsh domifaddr <vm-name>`.
+>#### Las IPs las obtienes con `virsh domifaddr <vm-name>`.
 
-------
+
+
+#### **ACTUALIZACIÓN PREVENTIVA / MANTENIMIENTO LIGERO**
+
+```bash
+ansible-playbook -i inventory.ini update_repos.yml
+```
+
+
+
+####  **ACTUALIZACIÓN COMPLETA / MANTENIMIENTO PESADO**
+
+```bash
+ansible-playbook -i inventory.ini update_system.yml
+```
+
+
+
+## 📊 Cuándo Usar Cada Playbook
+
+
+
+| Escenario                                   | Usar                |
+| ------------------------------------------- | ------------------- |
+| Instalar un nuevo paquete                   | `update_repos.yml`  |
+| Revisar si hay actualizaciones disponibles  | `update_repos.yml`  |
+| Mantenimiento diario (no disruptivo)        | `update_repos.yml`  |
+| Parche de seguridad crítico                 | `update_system.yml` |
+| Mantenimiento mensual planificado           | `update_system.yml` |
+| Preparar servidor para nuevo entorno        | `update_system.yml` |
+| CI/CD Pipeline (antes de deployments)       | `update_repos.yml`  |
+| Post-deployment (verificar actualizaciones) | `update_system.yml` |
+
+
+
+
 
 ## 7. Verificación antes de Crear las VMs
 
@@ -562,6 +597,8 @@ libvirt
 
 
 ---
+
+
 
 ## Errores durante el despliegue 
 

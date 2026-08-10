@@ -1,7 +1,13 @@
-# Despliegue de infraestructura de sistemas Red Hat-based para  el estudio de RHCSA/RHCE/RHCSS
+# Despliegue de servidores
+Bitácora de la implementación documentada  paso a paso para desplegar una escenario conformado por varios servidores. Se utiliza KVM/QEMU para crear 4 maquinas virtuales y segmentación de dos redes.
+
+Tal como ya se ha mencionado antes, su objetivo  es la capacitación en las tecnologías de los sistemas  basado en `Red Hat Linux Enterprise` en el contexto de las certificaciones `RHCSA/RHCE/RHCSS`.
+
+
 
 
 ## 1. Preparar Fedora Bazzite para Virtualización
+
 
 
 ### Paso 1: Instalar el stack de virtualización
@@ -256,11 +262,14 @@ sudo virsh net-autostart lab-internal
 
 ### 2. Uso del  script:
 
-#### Guarda el script:
+#### Descarga el script:
+
+####  [setup-redhat-lab.sh](/main/setup-redhat-lab.sh)
+
+
 
 Utiliza `nano`,  `vim` o su editor favorito
 
-####  [script de despliegue](/main/setup-redhat-lab.sh)
 
 
 ```bash
@@ -268,7 +277,7 @@ nano setup-redhat-lab.sh
 # pega el contenido del script
 ```
 
-### 3.  bootstraping de las VMS
+### 3.  Creación y arranque  de las VMS
 
 Ejecuta 
 
@@ -287,7 +296,17 @@ Ejecuta
 ```bash
 # Ver estado
 virsh list --all
+```
+```text
+ Id   Name             State
+---------------------------------
+ -    alma-rhcsa       shut off
+ -    alma-security    shut off
+ -    alma-target-02   shut off
+ -    freeipa-lab      shut off
+```
 
+```bash
 # Encender / apagar
 virsh start alma-rhcsa
 virsh shutdown alma-rhcsa      # graceful
@@ -383,9 +402,50 @@ ansible -i inventory.ini all -m ping
 
 ------
 
-## 7. Checklist de Verificación
+## 7. Verificación antes de Crear las VMs
 
-Antes de empezar a estudiar, confirma:
+### Ejecuta este checklist:
+
+```bash
+nano checklist.sh
+# Pegar el contenido del script
+```
+
+
+```bash
+echo "=== CHECKLIST PRE-VM ==="
+echo "[ ] libvirtd activo: $(sudo systemctl is-active libvirtd)"
+echo "[ ] Red default activa: $(sudo virsh net-info default 2>/dev/null | grep 'Active:' | awk '{print $2}')"
+echo "[ ] Red default autostart: $(sudo virsh net-info default 2>/dev/null | grep 'Autostart:' | awk '{print $2}')"
+echo "[ ] Red lab-internal activa: $(sudo virsh net-info lab-internal 2>/dev/null | grep 'Active:' | awk '{print $2}')"
+echo "[ ] virt-sysprep disponible: $(command -v virt-sysprep >/dev/null 2>&1 && echo 'SI' || echo 'NO')"
+echo "[ ] genisoimage disponible: $(command -v genisoimage >/dev/null 2>&1 && echo 'SI' || echo 'NO')"
+echo "[ ] Espacio en disco: $(df -h $HOME | tail -1 | awk '{print $4}') libres en $HOME"
+```
+
+**Salida:**
+
+```bash
+❯ ./checklist.sh
+=== CHECKLIST PRE-VM ===
+[ ] libvirtd activo: active
+[ ] Red default activa: yes
+[ ] Red default autostart: yes
+[ ] Red lab-internal activa:
+[ ] virt-sysprep disponible: SI
+[ ] genisoimage disponible: SI
+[ ] Espacio en disco: 112G libres en /home/dk
+
+```
+
+### Después de crear las VMs
+
+Siga esta pista para comprobar 
+
+```bash
+nano verify.sh
+# Pegar el contenido del script
+```
 
 ```bash
 echo "=== CHECKLIST BAZZITE LAB ==="
@@ -400,8 +460,26 @@ echo "[ ] alma-rhcsa creada y accesible por SSH"
 echo "[ ] Snapshots base creados en todas las VMs"
 echo "[ ] Toolbox ansible creado y funcionando"
 ```
+**Resultado:**
+```text
+❯ ./verify.sh
+=== CHECKLIST BAZZITE LAB ===
+[ ] rpm-ostree install aplicado y sistema reiniciado
+[ ] libvirtd activo: active
+[ ] Usuario en grupos libvirt,kvm: kvm
+libvirt
+[ ] virsh list funciona sin sudo
+[ ] vTPM disponible: /usr/share/swtpm/swtpm-create-user-config-files OK
+[ ] OVMF disponible: /usr/share/edk2/ovmf/OVMF_CODE.fd OK
+[ ] Red lab-internal creada:
+[ ] alma-rhcsa creada y accesible por SSH
+[ ] Snapshots base creados en todas las VMs
+[ ] Toolbox ansible creado y funcionando
+
+```
 
 ------
+
 
 ## 8. Ventajas de Esta Arquitectura
 
@@ -414,6 +492,8 @@ echo "[ ] Toolbox ansible creado y funcionando"
 | **Vega integrada**    | Bazzite usa la GPU para el desktop. Las VMs usan virtio (sin GPU), ahorrando recursos. |
 | **Separación física** | Tu lab no compite con pfSense/K3s en el ThinkCentre. Estudias sin miedo a romper producción. |
 | **KVM nativo**        | Mismo stack que RHEL. Lo que aprendas en `virsh` aplica directo a `qemu-kvm` en empresas. |
+
+---
 
 
 
@@ -563,6 +643,10 @@ systemctl reboot
 ------
 
 ### Pasos de Reparación 🔧
+
+Léase un poco acerca de las redes  [bridges](/docs/about-bridges.md)
+
+
 
 #### Paso 1: Instalar dependencias faltantes
 
@@ -730,29 +814,7 @@ rm -f *.iso
 ./setup-redhat-lab-fixed.sh
 ```
 
-
-
-## Verificación Final Antes de Crear VMs
-
-### Ejecuta esta checklist:
-
-
-
-```bash
-echo "=== CHECKLIST PRE-VM ==="
-echo "[ ] libvirtd activo: $(sudo systemctl is-active libvirtd)"
-echo "[ ] Red default activa: $(sudo virsh net-info default 2>/dev/null | grep 'Active:' | awk '{print $2}')"
-echo "[ ] Red default autostart: $(sudo virsh net-info default 2>/dev/null | grep 'Autostart:' | awk '{print $2}')"
-echo "[ ] Red lab-internal activa: $(sudo virsh net-info lab-internal 2>/dev/null | grep 'Active:' | awk '{print $2}')"
-echo "[ ] virt-sysprep disponible: $(command -v virt-sysprep >/dev/null 2>&1 && echo 'SI' || echo 'NO')"
-echo "[ ] genisoimage disponible: $(command -v genisoimage >/dev/null 2>&1 && echo 'SI' || echo 'NO')"
-echo "[ ] Espacio en disco: $(df -h $HOME | tail -1 | awk '{print $4}') libres en $HOME"
-
-```
-
-
-
 ---
 
-#### [Acerca de bridges](/docs/about-bridges.md)
+
 

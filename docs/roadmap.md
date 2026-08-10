@@ -1,6 +1,6 @@
-# Roadmap para desplegar un laboratorio
+# Roadmap 
 
-El roadmap a seguir para desplegar un laboratorio y hacer ensayos para refrescar conocimientos  de manera que este enfocado a  obtener un nivel aceptable para un empleo.  
+El roadmap sugerido  para desplegar un laboratorio y aprender  a implementar las nuevas tecnologías de los sistemas `Red Hat-based`  con la finalidad de alcanzar el nivel de  conocimientos  para cualquiera de los  exámenes con miras a obtener una certificación.
 
 Considerando los siguientes puntos:
 

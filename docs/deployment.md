@@ -415,7 +415,7 @@ virsh start alma-security
 
 ------
 
-#### 6. Usar el mismo host Fedora Bazzite como Control Ansible
+## 6. Usar el mismo host Fedora Bazzite como Control Ansible
 
 No desperdicies 2 GB en una VM de control. Tu Bazzite host puede ser el control node:
 
@@ -438,7 +438,9 @@ brew install ansible
 ```
 
 
+
 ### Crear inventario
+
 ```bash
 mkdir -p ~/ansible-lab && cd ~/ansible-lab
 ```

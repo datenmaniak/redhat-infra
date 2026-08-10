@@ -415,18 +415,29 @@ virsh start alma-security
 
 ------
 
-## 6. Usar el Host Bazzite como Nodo de Control Ansible
+#### 6. Usar el mismo host Fedora Bazzite como Control Ansible
 
 No desperdicies 2 GB en una VM de control. Tu Bazzite host puede ser el control node:
 
-### En Bazzite, crear un toolbox Fedora para Ansible (o instalar en el host vía rpm-ostree si prefieres)
-
+### Alternativa 1: crear un contenedor con Distrobox
 ```bash
 distrobox create --image quay.io/fedora/fedora:latest ansible-lab
 distrobox enter ansible-lab
 
 sudo dnf install -y ansible-core sshpass
 ```
+
+
+### Alternativa 2: instalar en el host vía rpm-ostree
+
+Utiliza solo si es sumamente necesario por razones fallidas de otras. Recarga el sistema.
+
+### Alternativa 3: instalar con `brew`  (Recomendada)
+```bash
+brew install ansible
+```
+
+
 ### Crear inventario
 ```bash
 mkdir -p ~/ansible-lab && cd ~/ansible-lab

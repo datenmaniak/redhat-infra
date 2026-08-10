@@ -9,6 +9,28 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 log() {
+  local level=$1
+  local message=$2
+  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+
+  case $level in
+  "INFO") echo -e "${GREEN}[INFO]${NC} $message" ;;
+  "WARN") echo -e "${YELLOW}[WARN]${NC} $message" ;;
+  "ERROR") echo -e "${RED}[ERROR]${NC} $message" ;;
+  "STEP") echo -e "${BLUE}[STEP]${NC} $message" ;;
+  *) echo "$message" ;;
+  esac
+
+  # echo "[$timestamp] [$level] $message" >>"$LOG_FILE"
+}
+
+
+if [[ $EUID -ne 0 ]]; then
+    log "ERROR" "Este script debe ejecutarse como root (sudo)"
+    exit 1
+  fi
+
+log() {
   echo -e "${2:-}${1}${NC}"
 }
 

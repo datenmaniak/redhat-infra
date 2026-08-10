@@ -1,0 +1,169 @@
+---
+- name: Configuración Inicial - Actualizar Sistema e Instalar Herramientas Esenciales
+  hosts: all
+  become: yes
+  serial: "{{ update_serial | default(1) }}"
+  
+  vars:
+    # Lista de paquetes esenciales para instalar
+    essential_packages:
+      - neovim          # Editor moderno (alternativa a vim)
+      - vim             # Editor clásico (backup)
+      - nano            # Editor simple y fácil
+      - tmux            # Multiplexor de terminal (sesiones persistentes)
+      - bash-completion # Auto-completado en terminal
+      - bind-utils      # dig, nslookup (herramientas DNS)
+      - net-tools       # ifconfig, netstat, route (legacy pero útiles en exámenes)
+      - htop            # Monitor de procesos mejorado (extra útil)
+      - tree            # Visualización de directorios en árbol (extra útil)
+      - git             # Control de versiones (extra útil)
+      - wget            # Descarga de archivos (extra útil)
+      - curl            # Transferencia de datos (extra útil)
+      - telnet          # Pruebas de conectividad (extra útil)
+      - traceroute      # Trazado de rutas (extra útil)
+    
+    # Paquetes que podrían no estar disponibles en todas las versiones
+    optional_packages:
+      - python3-pip     # Gestor de paquetes Python
+      - python3-devel   # Headers de Python para compilación
+      - gcc             # Compilador C (útil para compilar herramientas)
+      - make            # Herramienta de automatización
+      - openssl         # Seguridad/SSL
+
+  tasks:
+    - name: 1. Verificar distribución y versión
+      command: cat /etc/os-release
+      register: os_info
+      changed_when: False
+      tags: [always, info]
+
+    - name: 2. Mostrar información del sistema
+      debug:
+        msg: |
+          📋 {{ inventory_hostname }}
+          🖥️  Distribución: {{ os_info.stdout_lines | select('search', 'PRETTY_NAME') | first | regex_replace('PRETTY_NAME="(.*)"', '\\1') }}
+          🏷️  Hostname: {{ ansible_hostname }}
+          💻 IP: {{ ansible_default_ipv4.address if ansible_default_ipv4 is defined else 'N/A' }}
+      tags: [always, info]
+
+    - name: 3. Actualizar caché de repositorios
+      dnf:
+        update_cache: yes
+      tags: [update, cache]
+
+    - name: 4. Actualizar todos los paquetes del sistema
+      dnf:
+        name: '*'
+        state: latest
+      register: upgrade_result
+      tags: [update, system]
+
+    - name: 5. Instalar paquetes esenciales
+      dnf:
+        name: "{{ essential_packages }}"
+        state: present
+      register: install_result
+      tags: [install, essential]
+      retries: 3
+      delay: 10
+      until: install_result is success
+
+    - name: 6. Intentar instalar paquetes opcionales (si están disponibles)
+      dnf:
+        name: "{{ optional_packages }}"
+        state: present
+      register: optional_install_result
+      ignore_errors: yes
+      tags: [install, optional]
+
+    - name: 7. Limpiar paquetes obsoletos (autoremove)
+      dnf:
+        autoremove: yes
+      register: autoremove_result
+      when: upgrade_result.changed or install_result.changed
+      tags: [cleanup]
+
+    - name: 8. Limpiar caché de paquetes
+      command: dnf clean all
+      register: clean_result
+      changed_when: "'0 files removed' not in clean_result.stdout"
+      tags: [cleanup]
+
+    - name: 9. Verificar paquetes instalados correctamente
+      command: rpm -q {{ essential_packages | join(' ') }}
+      register: verify_packages
+      changed_when: False
+      ignore_errors: yes
+      tags: [verify, info]
+
+    - name: 10. Mostrar estado de instalación
+      debug:
+        msg: |
+          ✅ {{ inventory_hostname }} - Configuración completada
+          
+          📦 Paquetes instalados:
+          {% for pkg in essential_packages %}
+          {% if pkg in verify_packages.stdout %}
+          ✅ {{ pkg }}
+          {% else %}
+          ❌ {{ pkg }} (NO INSTALADO)
+          {% endif %}
+          {% endfor %}
+          
+          {% if reboot_check is defined and reboot_check.rc == 1 %}
+          ⚠️ REQUIERE REINICIO - Actualizaciones de kernel pendientes
+          {% else %}
+          ✅ Sistema estable
+          {% endif %}
+      when: verify_packages is defined
+      tags: [info, report]
+
+    - name: 11. Verificar si el sistema requiere reinicio
+      command: needs-restarting -r
+      register: reboot_check
+      failed_when: False
+      changed_when: reboot_check.rc == 1
+      tags: [reboot, check]
+
+    - name: 12. ⚠️ Alerta de reinicio necesario
+      debug:
+        msg: |
+          ⚠️ {{ inventory_hostname }} REQUIERE REINICIO
+          📌 Ejecuta: ansible {{ inventory_hostname }} -m reboot -a "reboot_timeout=300"
+          o usa el playbook de reinicio: ansible-playbook reboot.yml -l {{ inventory_hostname }}
+      when: reboot_check.rc == 1
+      tags: [reboot, alert]
+
+    - name: 13. Crear directorio de configuración personalizada
+      file:
+        path: "{{ ansible_env.HOME }}/.ansible-config"
+        state: directory
+        mode: '0755'
+      when: ansible_env.HOME is defined
+      tags: [config]
+
+    - name: 14. Crear archivo de configuración de tmux
+      copy:
+        dest: "{{ ansible_env.HOME }}/.tmux.conf"
+        content: |
+          # Configuración tmux para exámenes y labs
+          set -g mouse on
+          set -g history-limit 10000
+          set -g default-terminal "screen-256color"
+          
+          # Atajos útiles
+          bind r source-file ~/.tmux.conf \; display "Configuración recargada!"
+          bind h split-window -h
+          bind v split-window -v
+          
+          # Cambiar prefix a Ctrl+a (más cómodo)
+          unbind C-b
+          set -g prefix C-a
+          bind C-a send-prefix
+          
+          # Numerar ventanas desde 1
+          set -g base-index 1
+          set -g pane-base-index 1
+        mode: '0644'
+      when: ansible_env.HOME is defined
+      tags: [config, tmux]

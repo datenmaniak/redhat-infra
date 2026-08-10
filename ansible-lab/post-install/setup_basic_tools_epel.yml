@@ -1,0 +1,94 @@
+---
+- name: Configuración Inicial - Actualizar Sistema e Instalar Herramientas Esenciales
+  hosts: all
+  become: yes
+  serial: "{{ update_serial | default(1) }}"
+
+  vars:
+    # Paquetes que SI están en repositorios base
+    base_packages:
+      - vim
+      - nano
+      - tmux
+      - bash-completion
+      - bind-utils
+      - net-tools
+      - tree
+      - git
+      - wget
+      - curl
+      - telnet
+      - traceroute
+
+    # Paquetes que requieren EPEL
+    epel_packages:
+      # - htop
+
+  tasks:
+    - name: 1. Mostrar información del sistema
+      debug:
+        msg: |
+          📋 Configurando: {{ inventory_hostname }}
+          🖥️  Distribución: {{ ansible_distribution }} {{ ansible_distribution_version }}
+      tags: [always, info]
+
+    - name: 2. Verificar si EPEL está instalado
+      command: rpm -q epel-release
+      register: epel_check
+      changed_when: False
+      failed_when: False
+      tags: [epel, check]
+
+    - name: 3. Instalar EPEL repository
+      dnf:
+        name: epel-release
+        state: present
+      when: epel_check.rc != 0
+      register: epel_install
+      tags: [epel, install]
+
+    - name: 4. Habilitar EPEL repository (si es necesario)
+      command: dnf config-manager --set-enabled epel
+      when: epel_install.changed
+      ignore_errors: yes
+      tags: [epel, enable]
+
+    - name: 5. Actualizar caché de repositorios (con EPEL)
+      dnf:
+        update_cache: yes
+      tags: [update, cache]
+
+    - name: 6. Instalar paquetes base
+      dnf:
+        name: "{{ base_packages }}"
+        state: present
+      register: base_install
+      tags: [install, base]
+
+    - name: 7. Instalar paquetes desde EPEL
+      dnf:
+        name: "{{ epel_packages }}"
+        state: present
+      register: epel_install_result
+      ignore_errors: yes
+      tags: [install, epel]
+
+    - name: 8. Verificar instalación completa
+      debug:
+        msg: |
+          ✅ {{ inventory_hostname }} - Instalación completada
+
+          📦 Paquetes base instalados:
+          {% for pkg in base_packages %}
+          ✅ {{ pkg }}
+          {% endfor %}
+
+          📦 Paquetes EPEL:
+          {% for pkg in epel_packages %}
+          {% if epel_install_result.results is defined %}
+          ✅ {{ pkg }}
+          {% else %}
+          ❌ {{ pkg }} (EPEL no disponible)
+          {% endif %}
+          {% endfor %}
+      tags: [info, report]

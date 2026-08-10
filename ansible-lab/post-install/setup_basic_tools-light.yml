@@ -1,0 +1,51 @@
+---
+- name: Instalación Rápida - Herramientas Esenciales para Laboratorio
+  hosts: all
+  become: yes
+  
+  vars:
+    tools:
+      - vim
+      - nano
+      - tmux
+      - bash-completion
+      - bind-utils
+      - net-tools
+      - htop
+      - tree
+      - git
+      - wget
+      - curl
+
+  tasks:
+    - name: Actualizar repositorios
+      dnf:
+        update_cache: yes
+
+    - name: Instalar herramientas esenciales
+      dnf:
+        name: "{{ tools }}"
+        state: present
+      register: install_result
+
+    - name: Verificar instalación
+      debug:
+        msg: |
+          ✅ {{ inventory_hostname }} - Herramientas instaladas
+          📦 {{ tools | length }} paquetes procesados
+          {% if install_result.changed %}
+          🔄 Paquetes recién instalados
+          {% else %}
+          ✅ Todos los paquetes ya estaban instalados
+          {% endif %}
+
+    - name: Verificar tmux (crítico para laboratorios)
+      command: tmux -V
+      register: tmux_version
+      changed_when: False
+      failed_when: False
+
+    - name: Confirmar tmux disponible
+      debug:
+        msg: "✅ tmux {{ tmux_version.stdout }} instalado en {{ inventory_hostname }}"
+      when: tmux_version.rc == 0

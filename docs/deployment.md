@@ -923,7 +923,7 @@ Una vez que `virsh net-list --all` muestre **active + yes** en ambas redes:
 
 ## Snapshots
 
-> ### Es   correcta este comando?
+> ### Son los parámetros correctos para este comando?
 >
 
 ```bash
@@ -932,7 +932,7 @@ virsh snapshot-create-as alma-target-02  --description "Post update-repos"
 
 
 
-Sí, **la sintaxis es válida**, pero `estás omitiendo el nombre del snapshot`. En ese caso, `virsh` puede generar uno automáticamente, mientras que `"Post update-repos"` se usa como descripción. La documentación define el dominio, nombre y descripción como argumentos del comando, siendo estos últimos opcionales.[libvirt](https://www.libvirt.org/manpages/virsh.html)
+Sí, **la sintaxis es válida y parámetros**, pero `estás omitiendo el nombre del snapshot`. En ese caso, `virsh` puede generar uno automáticamente, mientras que `"Post update-repos"` se usa como descripción. La documentación define el dominio, nombre y descripción como argumentos del comando, siendo estos últimos opcionales.[libvirt](https://www.libvirt.org/manpages/virsh.html)
 
 Es más claro y recomendable ejecutar:
 

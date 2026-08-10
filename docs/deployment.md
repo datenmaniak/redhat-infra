@@ -265,12 +265,12 @@ sudo virsh net-autostart lab-internal
 
 #### Descarga el script:
 
-####  [setup-redhat-lab.sh](/main/setup-redhat-lab.sh)
+####  [setup.sh](/main/setup.sh)
 
 Utiliza `nano`,  `vim` o su editor favorito
 
 ```bash
-nano setup-redhat-lab.sh
+nano setup.sh
 # pega el contenido del script
 ```
 
@@ -279,7 +279,7 @@ nano setup-redhat-lab.sh
 Ejecuta 
 
 ```bash
-./setup-redhat-lab.sh
+./setup.sh
 ```
 
 
@@ -323,6 +323,26 @@ virsh shutdown alma-rhcsa
 virsh shutdown alma-target-02
 virsh start alma-security
 ```
+
+
+
+**Mostrar todas la VMs con sus IP:**
+
+```bash
+nano show-ip.sh
+# pega el script 
+```
+
+
+
+```bash
+for vm in alma-rhcsa alma-target-02 alma-security freeipa-lab; do
+  virsh domifaddr $vm
+done
+
+```
+
+
 
 ------
 
@@ -501,8 +521,8 @@ libvirt
 Saving 'alma9-base.qcow2'
 HTTP response 200  [https://repo.almalinux.org/almalinux/9.8/cloud/x86_64/images/AlmaLinux-9-Generalma9-base.qcow2     100% [===============================================>]  549.46M  749.16KB/s
                           [Files: 1  Bytes: 549.46M [726.30KB/s] Redirects:]
-./setup-redhat-lab.sh: line 21: virt-sysprep: command not found
-./setup-redhat-lab.sh: line 22: virt-customize: command not found
+./setup.sh: line 21: virt-sysprep: command not found
+./setup.sh: line 22: virt-customize: command not found
 Formatting '/home/dk/VMs/alma-rhcsa.qcow2', fmt=qcow2 cluster_size=65536 extended_l2=off compression_type=zlib size=42949672960 backing_file=alma9-seed.qcow2 backing_fmt=qcow2 lazy_refcounts=off refcount_bits=16
 xorriso 1.5.8.pl02 : RockRidge filesystem manipulator, libburnia project.
 
@@ -709,7 +729,7 @@ rm -f *.iso *.qcow2
 En este punto con las dependencias listas  y las redes activas, el arranque de las VMs debe completar exitosamente.
 
 ```bash
-./setup-redhat-lab.sh
+./setup.sh
 
 ```
 

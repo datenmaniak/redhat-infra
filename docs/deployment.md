@@ -326,21 +326,58 @@ virsh start alma-security
 
 
 
-**Mostrar todas la VMs con sus IP:**
+#### Mostrar todas la VMs con sus IP:
 
 ```bash
 nano show-ip.sh
 # pega el script 
 ```
 
-
-
 ```bash
 for vm in alma-rhcsa alma-target-02 alma-security freeipa-lab; do
-  virsh domifaddr $vm
+  echo  "${vm}
+    $(virsh domifaddr $vm)
+    "
 done
+```
+
+#### Acceder a la VMs:
+
+```bash
+# Conectar por consola: 
+virsh console alma-rhcsa"
+
+# Conectar por SSH:
+ssh -i ~/.ssh/<llave> labadmin@IP 
+```
+```bash
+# Ejemplo: en mi caso utilizando mi propia llave SSH | datenmaniak 
+ssh -i ~/.ssh/datenmaniak labadmin@192.168.122.193
 
 ```
+
+#### Antes de ejecutar `setup.sh` 
+
+Ajuste la variable en `setup.sh` :
+
+Declare su llave SSH personalizada o utilice la llave que se genera por defecto:
+
+```shell
+SSH_KEY="/home/dk/.ssh/id_ed25519.pub"  
+```
+
+### Si todavía no tienes una llave SSH
+
+1. Abra Terminal.
+
+2. Pegue el texto siguiente y reemplace el correo electrónico usado en el ejemplo por su dirección de correo electrónico de  GitHub.
+
+   ```shell
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+   ```
+
+
+
 
 
 
@@ -827,16 +864,7 @@ Una vez que `virsh net-list --all` muestre **active + yes** en ambas redes:
 
 
 ```bash
-# 1. Limpiar VMs rotas del intento anterior
-cd ~/VMs
-for vm in alma-rhcsa alma-target-02 alma-security freeipa-lab; do
-  virsh destroy $vm 2>/dev/null
-  virsh undefine $vm --remove-all-storage 2>/dev/null
-done
-rm -f *.iso
-
-# 2. Re-ejecutar
-./setup-redhat-lab-fixed.sh
+./setup.sh
 ```
 
 ---

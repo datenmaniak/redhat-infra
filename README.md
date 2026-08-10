@@ -1,21 +1,26 @@
-# Infraestructura de sistemas Red Hat-based 
+# Laboratorio  Red Hat-based   
 
-Sistemas basados en Red Hat Linux Enterprise.  Se someten a evaluación por ser ampliamente utilizados en el sector gobierno y empresarial.
+El tema central son los sistemas operativos basados en Red Hat Linux Enterprise.  Los cuales fueron evaluados por ser ampliamente utilizados en el sector gobierno, empresarial y de interés especial para la formación complementaria en infraestructura de IT.
 
-Se toma en consideración  para  el estudio de `RHCSA/RHCE/RHCSS`  y obtención de certificaciones. 
+Eso me conduce a tomar en consideración  para  el estudio de `RHCSA/RHCE/RHCSS`  y obtención de alguna de las certificaciones. 
 
 En este sentido, la documentaciones descritas en este repositorio ampliaran la base de conocimientos que  conducen a una ruta de despliegue de la **infraestructura para el laboratorio de estudios** de las áreas de conocimientos esenciales  para cada una de las certificaciones.
 
-Sí se quiere y sí el lector se inclina por la lectura, la *clase rápida* y el resto de este documento explicará las razones para el escenario elegido en la implementación. De lo contrario, los enlaces a la acción inmediata.
+Sí se quiere y sí el lector se inclina por la lectura, la *clase rápida* y el resto de este documento explicará las razones para el escenario elegido en la implementación. 
+
+Siendo breve, los  enlaces a la acción inmediata.
+
+- 
+  ####  [Hoja de Ruta / Roadmap](docs/roadmap.md)
+
+- ####  [Despliegue elegido](docs/deployment.md)
+
+- ####  [Alternativa Proxmox](docs/proxmox-deploy.md)
 
 
-####  [Hoja de Ruta / Roadmap](docs/roadmap.md)
-####  [Despliegue elegido](docs/deployment.md)
-####  [Alternativa Proxmox](docs/proxmox-deploy.md)
 
 
-
-# 🎓 Clase Rápida: Ecosistema Linux Basado en Red Hat
+## 🎓 Clase Rápida: Ecosistema Linux Basado en Red Hat
 
 
 
@@ -41,6 +46,7 @@ Esto dejó a miles de organizaciones sin una alternativa gratuita y estable. De 
 | **Rocky Linux**   | Comunitario / Enterprise     | Gratuito         | CIQ, terceros                 |
 | **Oracle Linux**  | Comercial (fork de RHEL)     | Gratuito         | Oracle (pago)                 |
 | **CentOS Stream** | Rolling release (desarrollo) | Gratuito         | Red Hat (limitado)            |
+
 
 
 ## 3. Comparativa Detallada
@@ -145,7 +151,11 @@ Datos de comparación de versiones menores:
 
 
 
-> ## Si se quiero profundizar en el tema más exigente de este sistema operativo. Qué se necesita para dominar la administración en termino de seguridad para llegar al nivel experto?
+
+
+> ### Si se quiero profundizar en el tema más exigente de este sistema operativo. Qué se necesita para dominar la administración en termino de seguridad para llegar al nivel experto?
+
+
 
 
 
@@ -169,7 +179,7 @@ Red Hat no se basa en una sola muralla. Se basa en **7 capas de defensa**:
 │  4. Red (firewalld, nftables, TLS)  │
 │  3. Host (AIDE, IMA, TPM2)          │
 │  2. Kernel (SELinux, namespaces)    │
-│  1. Físico/Virtual (Secure Boot,     │
+│  1. Físico/Virtual (Secure Boot,    │
 │     measured boot, vTPM)            │
 └─────────────────────────────────────┘
 ```
@@ -1086,34 +1096,34 @@ Dado que tu objetivo es **dominar la administración de seguridad en sistemas Re
 
 ```plain
 ┌─────────────────────────────────────────────────────────────┐
-│                    PROXMOX HOST                               │
-│  ┌─────────────────────────────────────────────────────┐      │
-│  │  VM-01: rhel-reference (evaluación de 60 días)      │      │
-│  │  • RHEL 9.5 con suscripción de desarrollador        │      │
-│  │  • Uso: Comparar resultados, "source of truth"      │      │
-│  │  • 4 vCPU / 8 GB RAM / 40 GB                        │      │
-│  └─────────────────────────────────────────────────────┘      │
-│  ┌─────────────────────────────────────────────────────┐      │
-│  │  VM-02: alma-security-master ⭐ PRINCIPAL            │      │
-│  │  • AlmaLinux 9 + STIG DISA + FIPS 140-3             │      │
-│  │  • vTPM 2.0 + LUKS2 + auditd + AIDE + fapolicyd   │      │
-│  │  • FreeIPA client + SSSD                            │      │
-│  │  • Podman rootless + SELinux custom policies        │      │
-│  │  • 4 vCPU / 16 GB RAM / 60 GB + 40 GB (datos)      │      │
-│  └─────────────────────────────────────────────────────┘      │
-│  ┌─────────────────────────────────────────────────────┐      │
-│  │  VM-03: rocky-hardening-lab                          │      │
-│  │  • Rocky Linux 9 + CIS Benchmark                      │      │
-│  │  • Uso: Comparar comportamiento SELinux vs Alma     │      │
-│  │  • Identificar divergencias en parches y versiones    │      │
-│  │  • 2 vCPU / 4 GB RAM / 40 GB                        │      │
-│  └─────────────────────────────────────────────────────┘      │
-│  ┌─────────────────────────────────────────────────────┐      │
-│  │  VM-04: freeipa-server                               │      │
-│  │  • AlmaLinux 9 (o RHEL si prefieres)                │      │
-│  │  • IdM central para autenticación de todas las VMs   │      │
-│  │  • 2 vCPU / 4 GB RAM / 30 GB                        │      │
-│  └─────────────────────────────────────────────────────┘      │
+│                    PROXMOX HOST                             │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  VM-01: rhel-reference (evaluación de 60 días)      │    │
+│  │  • RHEL 9.5 con suscripción de desarrollador        │    │
+│  │  • Uso: Comparar resultados, "source of truth"      │    │
+│  │  • 4 vCPU / 8 GB RAM / 40 GB                        │    │
+│  └─────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  VM-02: alma-security-master ⭐ PRINCIPAL           │    │
+│  │  • AlmaLinux 9 + STIG DISA + FIPS 140-3             │    │
+│  │  • vTPM 2.0 + LUKS2 + auditd + AIDE + fapolicyd     │    │
+│  │  • FreeIPA client + SSSD                            │    │
+│  │  • Podman rootless + SELinux custom policies        │    │
+│  │  • 4 vCPU / 16 GB RAM / 60 GB + 40 GB (datos)       │    │
+│  └─────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  VM-03: rocky-hardening-lab                         │    │
+│  │  • Rocky Linux 9 + CIS Benchmark                    │    │
+│  │  • Uso: Comparar comportamiento SELinux vs Alma     │    │
+│  │  • Identificar divergencias en parches y versiones  │    │
+│  │  • 2 vCPU / 4 GB RAM / 40 GB                        │    │
+│  └─────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  VM-04: freeipa-server                              │    │
+│  │  • AlmaLinux 9 (o RHEL si prefieres)                │    │
+│  │  • IdM central para autenticación de todas las VMs  │    │
+│  │  • 2 vCPU / 4 GB RAM / 30 GB                        │    │
+│  └─────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -1145,3 +1155,5 @@ Red Hat ofrece una **suscripción de desarrollador gratuita** (hasta 16 sistemas
 | **Rocky Linux**                                              | Es excelente, pero su nicho es la compatibilidad binaria extrema para software ISV. En seguridad enterprise (FIPS, STIG DISA), hoy está por detrás. |
 | **Para tu lab**                                              | AlmaLinux principal + RHEL de referencia. Rocky como "control de compatibilidad". |
 
+---
+Por *Willians Patiño* bajo la firma **datenmaniak**

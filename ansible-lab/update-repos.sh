@@ -1,1 +1,1 @@
-ansible-playbook -i inventory.yml update_repos.yml
+ansible-playbook -i inventory.ini update_repos.yml

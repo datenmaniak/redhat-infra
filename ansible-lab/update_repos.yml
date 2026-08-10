@@ -8,11 +8,11 @@
     - name: 1. Actualizar caché de repositorios
       dnf:
         update_cache: yes
-      # Este módulo ya maneja los códigos de retorno correctamente
 
-    - name: 2. Limpieza de caché antigua
-      dnf:
-        clean: all
+    - name: 2. Limpieza de caché antigua (clean all)
+      command: dnf clean all
+      register: clean_result
+      changed_when: "'0 files removed' not in clean_result.stdout"
 
     - name: 3. Verificar actualizaciones disponibles
       command: dnf check-update

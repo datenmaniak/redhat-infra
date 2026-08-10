@@ -27,5 +27,6 @@
       when: reboot_check.rc == 1
 
     - name: 4. Limpiar caché (post-actualización)
-      dnf:
-        clean: all
+       command: dnf clean all
+      register: clean_result
+      changed_when: "'0 files removed' not in clean_result.stdout"

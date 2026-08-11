@@ -561,7 +561,8 @@ ansible-playbook -i inventory-grouped.ini update_repo.yml -l security
 
 ```
 # Verificar paquetes instalados en el host
-ansible -i inventory-grouped.ini alma-rhcsa -m command -a "rpm -q vim nano tmux bash-completion bind-utils net-tools"
+ansible -i inventory-grouped.ini alma-rhcsa \
+-m command -a "rpm -q vim nano tmux bash-completion bind-utils net-tools"
 
 # Verificar tmux específicamente
 ansible -i inventory-grouped.ini alma-rhcsa -m command -a "tmux -V"
@@ -581,6 +582,233 @@ ansible-playbook -i inventory-grouped.ini -l production,security postinstall_ess
 
 
 
+## Playbook: Instalación de paquetes esenciales
+
+#### postinstall_essentials_install.yml
+
+```yml
+---
+- name: Configuración de Herramientas Esenciales
+  hosts: all
+  become: yes
+  serial: 1
+
+  vars:
+    base_tools:
+      - vim
+      - nano
+      - tmux
+      - bash-completion
+      - bind-utils
+      - net-tools
+      - tree
+      - git
+      - wget
+      - curl
+      - telnet
+      - traceroute
+      - policycoreutils-python-utils
+      - setools-console 
+
+    extra_tools:
+      - neovim
+      - htop
+
+  tasks:
+    # Tarea 1: Actualizar repositorios
+    - name: Actualizar caché de repositorios
+      dnf:
+        update_cache: yes
+
+    # Tarea 2: Instalar herramientas base
+    - name: Instalar herramientas base
+      dnf:
+        name: "{{ base_tools }}"
+        state: present
+      register: base_result
+
+    # Tarea 3: Intentar instalar EPEL
+    - name: Instalar EPEL release (para paquetes extra)
+      dnf:
+        name: epel-release
+        state: present
+      register: epel_result
+      ignore_errors: yes
+
+    # Tarea 4: Actualizar caché nuevamente (con EPEL)
+    - name: Actualizar caché con EPEL
+      dnf:
+        update_cache: yes
+      when: epel_result is success
+
+    # Tarea 5: Instalar paquetes extra (si EPEL está disponible)
+    - name: Instalar paquetes extra desde EPEL
+      dnf:
+        name: "{{ extra_tools }}"
+        state: present
+      when: epel_result is success
+      register: extra_result
+      ignore_errors: yes
+
+    # Tarea 6: Verificar instalación de tmux
+    - name: Verificar tmux
+      command: tmux -V
+      register: tmux_check
+      changed_when: False
+      failed_when: False
+
+    # Tarea 7: Resumen final
+    - name: Mostrar resumen de instalación
+      debug:
+        msg: |
+          ✅ {{ inventory_hostname }} - Instalación completada
+          ================================================
+          
+          📦 Herramientas base ({{ base_tools | length }}):
+          {% for tool in base_tools %}
+          ✅ {{ tool }}
+          {% endfor %}
+          
+          {% if epel_result is success %}
+          📦 Herramientas extra (EPEL):
+          {% for tool in extra_tools %}
+          ✅ {{ tool }}
+          {% endfor %}
+          {% else %}
+          ⚠️ EPEL no disponible - paquetes extra omitidos
+          {% endif %}
+          
+          {% if tmux_check.rc == 0 %}
+          ✅ tmux {{ tmux_check.stdout }} - OK
+          {% else %}
+          ❌ tmux NO INSTALADO
+          {% endif %}
+```
+
+
+
+## 🎓 Explicación del Playbook (Sin Código)
+
+Vamos a imaginar que tienes 3 máquinas virtuales (VMs) recién instaladas con AlmaLinux. Están "vacías": solo tienen el sistema operativo base, sin herramientas adicionales.
+
+Este playbook es como un **"asistente automático de configuración"** que va a entrar a cada VM por SSH y va a hacer lo mismo en todas.
+
+------
+
+### 📋 **Paso 1: ¿A quién va dirigido?**
+
+El playbook tiene una sección que dice "hosts: all". Eso significa que cuando lo ejecutes, Ansible va a buscar en tu archivo de inventario (donde están las direcciones IP de tus VMs) y va a intentar conectarse a **TODAS** las VMs que encuentre ahí.
+
+**En términos simples**: Es como si tuvieras una lista de direcciones y enviaras un mensajero a todas ellas.
+
+------
+
+### 🔐 **Paso 2: Permisos de administrador**
+
+El playbook tiene "become: yes". Esto es como decir: "Cuando entres a la VM, hazlo con permisos de root (administrador)".
+
+**¿Por qué?** Porque instalar software requiere permisos especiales, como cuando en Windows necesitas dar clic en "Sí" para instalar un programa.
+
+------
+
+### ⚙️ **Paso 3: ¿Qué va a instalar?**
+
+El playbook tiene una lista de herramientas que va a instalar en **todas** las VMs. Piensa en esto como una "lista de compras":
+
+- **Editores de texto**: vim y nano (para poder editar archivos de configuración).
+- **tmux**: Una herramienta súper importante que te permite tener "sesiones persistentes". Imagina que estás haciendo un laboratorio largo, te tienes que ir, cierras la terminal, y al volver, todo sigue exactamente como lo dejaste. ¡Es mágico!
+- **bash-completion**: Cuando escribes comandos largos y presionas "TAB", te autocompleta. Ahorra muchísimo tiempo.
+- **Herramientas de red**: Como `dig` y `nslookup` (para consultar DNS) y `net-tools` (para comandos como `ifconfig` que aunque son viejos, aparecen en exámenes).
+- **Otras utilidades**: Como `git` para clonar repositorios, `wget` y `curl` para descargar archivos, etc.
+
+**En términos simples**: Es como ir al supermercado con una lista y comprar todo lo que necesitas.
+
+------
+
+### 🔄 **Paso 4: Actualización de repositorios**
+
+Antes de instalar cualquier cosa, el playbook ejecuta un comando que actualiza la "lista de productos disponibles" en la VM.
+
+**Imagina**: Es como si fueras a comprar a una tienda y antes de pedir, revisas el catálogo actualizado para saber qué tienen en stock.
+
+------
+
+### 📦 **Paso 5: Instalación en dos fases**
+
+El playbook divide la instalación en dos grupos:
+
+1. **Paquetes base**: Son los que están en los repositorios "oficiales" de AlmaLinux. Estos siempre se pueden instalar sin problemas.
+2. **Paquetes extra**: Como `neovim` y `htop`, que no están en los repositorios oficiales. Para esto, el playbook primero intenta instalar un repositorio adicional llamado **EPEL** (Extra Packages for Enterprise Linux).
+
+**Imagina**: EPEL es como una "tienda especializada" que tiene productos que no venden en la tienda principal.
+
+------
+
+### 🛠️ **Paso 6: Manejo de errores inteligente**
+
+Aquí viene una parte interesante. El playbook está diseñado para **no fallar** si un paquete no se encuentra.
+
+- Si EPEL no está disponible o no se puede instalar, el playbook **ignora ese error** y continúa con el resto.
+- Esto es muy útil porque no quieres que todo el proceso falle solo porque un paquete no está disponible en una VM específica.
+
+**En términos simples**: Es como ir a comprar y si no encuentran un producto en la lista, compran todo lo demás y solo te avisan que ese producto no estaba.
+
+------
+
+### 📊 **Paso 7: Resumen final**
+
+Al finalizar, el playbook te muestra un resumen de:
+
+- Qué paquetes se instalaron correctamente.
+- Cuáles no se pudieron instalar (si es que hubo alguno).
+- El estado de `tmux`, que es una herramienta crítica para laboratorios.
+
+**Es como**: Al salir del supermercado, revisas la factura para ver qué compraste y qué faltó.
+
+------
+
+### 🚦 **Paso 8: Control de ejecución**
+
+El playbook tiene `serial: 1`, que significa que **actualiza una VM a la vez**, no todas en paralelo.
+
+**¿Por qué?** Imagina que tienes 3 servidores que trabajan juntos (un clúster). Si actualizas los 3 al mismo tiempo y algo sale mal, podrías perder todo. En cambio, actualizas uno, verificas que funciona, luego el siguiente, y así sucesivamente.
+
+**Es como**: Cambiar las llantas de un auto: no levantas el auto completo, cambias una llanta a la vez.
+
+------
+
+### 🧪 **Paso 9: Modo "prueba"**
+
+El playbook puede ejecutarse con la bandera `--check`, que significa "simula lo que harías, pero no lo hagas realmente". Es como un **"ensayo general"** sin riesgos.
+
+------
+
+## 🎯 **¿Qué logras al final?**
+
+Al terminar de ejecutar el playbook en todas tus VMs:
+
+1. **Todas tienen exactamente las mismas herramientas**. No importa si es la VM 1, 2 o 3, todas quedan idénticas. ¡Adiós a la inconsistencia!
+2. **Ahorraste muchísimo tiempo**. En lugar de instalar herramienta por herramienta manualmente en 3 VMs (lo que tomaría como 30 minutos), el playbook lo hace en **menos de 2 minutos**.
+3. **Es repetible**. Si mañana agregas una VM 4, ejecutas el mismo playbook y queda configurada exactamente igual que las demás.
+4. **Documentación viva**. El playbook en sí mismo es la documentación de lo que debe tener cada servidor.
+
+------
+
+## 🧠 **Analogía Final**
+
+Imagina que eres el encargado de preparar 10 computadoras para un examen de certificación. Sin Ansible:
+
+1. Enciendes la PC 1.
+2. Instalas vim, nano, tmux, etc.
+3. Repites en PC 2.
+4. Repites en PC 3...
+5. ¡Error! En PC 7 te olvidaste de instalar `git`.
+6. Ahora tienes computadoras inconsistentes.
+
+**Con Ansible**: Escribes el playbook una vez, lo ejecutas en las 10 PCs al mismo tiempo, y todas quedan **idénticas, perfectamente configuradas, y documentadas**. Si alguien te pregunta "¿qué herramientas tienen las VMs?", solo le muestras el playbook.
+
+
+
 
 
 
@@ -597,8 +825,16 @@ ansible-playbook -i inventory-grouped.ini -l production,security postinstall_ess
 | `--limit production`                 | Todos los del grupo production         |
 | `--limit alma-rhcsa:!alma-target-02` | Alma-rhcsa pero no alma-target-02      |
 | `--limit alma-rhcsa,&security`       | Alma-rhcsa Y también en grupo security |
+| `-l production,security`       | A los grupos: production y  security |
+| `-m command -a`       | Envía un comando sin acceder a la VM |
 
-------
+
+
+----
+
+
+
+
 
 ## 🛠️ Script Auxiliar para Ejecución Selectiva
 

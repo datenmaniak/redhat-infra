@@ -355,7 +355,7 @@ update_serial=3  # En seguridad podemos actualizar de a 3
 
 
 
-​	📝    **[Explicación de los nombres de host][/docs/roadmap.md#2-arquitectura-de-vms-para-16-gb-ram--6-cores]**
+​	📝    **[Explicación de los nombres de host](../docs/roadmap.md#2-arquitectura-de-vms-para-16-gb-ram--6-cores)**
 
 
 

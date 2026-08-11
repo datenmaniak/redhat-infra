@@ -18,6 +18,8 @@
       - curl
       - telnet
       - traceroute
+      - policycoreutils-python-utils
+      - setools-console 
 
     extra_tools:
       - neovim

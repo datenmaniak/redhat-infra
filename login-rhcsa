@@ -1,0 +1,1 @@
+ssh -i ~/.ssh/datenmaniak labadmin@192.168.122.193

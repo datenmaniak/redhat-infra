@@ -265,7 +265,7 @@ sudo virsh net-autostart lab-internal
 
 #### Descarga el script:
 
-####  [setup.sh](/main/setup.sh)
+####  [setup.sh](/setup.sh)
 
 Utiliza `nano`,  `vim` o su editor favorito
 

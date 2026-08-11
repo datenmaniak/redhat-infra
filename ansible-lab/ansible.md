@@ -419,7 +419,7 @@ ansible_python_interpreter=/usr/bin/python3
 
 ------
 
-## 📝 Playbook Modificado para Soporte de Tags
+## 📝 Playbook Modificado para Soporte de Tags (opcional)
 
 Agrega tags para mayor control:
 
@@ -497,13 +497,15 @@ ansible-playbook -i inventory.ini update_repos.yml --skip-tags clean
 
 ```
 # 1. Verificar sintaxis
-ansible-playbook -i inventory.ini update_repos.yml --limit alma-target-02 --check
+ansible-playbook -i inventory-grouped.ini update_repos.yml --limit alma-target-02 --check
 
 # 2. Ejecutar en modo prueba (dry-run)
-ansible-playbook -i inventory.ini update_system.yml --limit alma-target-02 --check
+ansible-playbook -i inventory-grouped.ini update_system.yml --limit alma-target-02 --check
 
 # 3. Si todo OK, ejecutar en producción
-ansible-playbook -i inventory.ini update_system.yml --limit alma-rhcsa,alma-target-02
+ansible-playbook -i inventory-grouped.ini update_system.yml -l production
+
+
 ```
 
 
@@ -514,7 +516,7 @@ ansible-playbook -i inventory.ini update_system.yml --limit alma-rhcsa,alma-targ
 
 ```
 # Actualizar solo el servidor de seguridad
-ansible-playbook -i inventory.ini update_system.yml --limit alma-alma-security
+ansible-playbook -i inventory.ini update_system.yml --limit alma-security
 ```
 
 
@@ -538,6 +540,47 @@ ansible-playbook -i inventory.ini update_system.yml --step --limit alma-rhcsa
 # Si tienes diferentes inventarios para diferentes entornos
 ansible-playbook -i inventory-prod.ini update_system.yml --limit '!alma-rhcsa'
 ```
+
+
+
+### Escenario 5: Trabajar por grupos
+
+```bash
+#  Ejecutar en modo prueba para Produccion (dry-run)
+ansible-playbook -i inventory-grouped.ini update_system.yml -l production  --check
+# aplicar
+ansible-playbook -i inventory-grouped.ini update_system.yml -l production  
+
+# actualizar el repositorio en el host de seguridad
+ansible-playbook -i inventory-grouped.ini update_repo.yml -l security  
+
+```
+### Escenario 5:  📋 Verificación Rápida
+
+
+
+```
+# Verificar paquetes instalados en el host
+ansible -i inventory-grouped.ini alma-rhcsa -m command -a "rpm -q vim nano tmux bash-completion bind-utils net-tools"
+
+# Verificar tmux específicamente
+ansible -i inventory-grouped.ini alma-rhcsa -m command -a "tmux -V"
+
+# Verificar si EPEL está instalado en el host alma-rhcsa
+ansible -i inventory-grouped.ini alma-rhcsa -m command -a "rpm -q epel-release"
+
+# Ejecutar la instalacion de paquetes esenciales en modo (dry-run) --check
+ ansible-playbook -i inventory-grouped.ini -l  postinstall_essentials_install.yml --check
+ 
+# Verificar previamente antes de instalar paquetes para los grupos: production & security
+ansible-playbook -i inventory-grouped.ini -l production,security postinstall_essentials_install.yml --check
+ 
+
+
+```
+
+
+
 
 
 

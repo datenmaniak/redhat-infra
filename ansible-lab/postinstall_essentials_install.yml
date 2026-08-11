@@ -1,0 +1,94 @@
+---
+- name: Configuración de Herramientas Esenciales
+  hosts: all
+  become: yes
+  serial: 1
+
+  vars:
+    base_tools:
+      - vim
+      - nano
+      - tmux
+      - bash-completion
+      - bind-utils
+      - net-tools
+      - tree
+      - git
+      - wget
+      - curl
+      - telnet
+      - traceroute
+
+    extra_tools:
+      - neovim
+      - htop
+
+  tasks:
+    # Tarea 1: Actualizar repositorios
+    - name: Actualizar caché de repositorios
+      dnf:
+        update_cache: yes
+
+    # Tarea 2: Instalar herramientas base
+    - name: Instalar herramientas base
+      dnf:
+        name: "{{ base_tools }}"
+        state: present
+      register: base_result
+
+    # Tarea 3: Intentar instalar EPEL
+    - name: Instalar EPEL release (para paquetes extra)
+      dnf:
+        name: epel-release
+        state: present
+      register: epel_result
+      ignore_errors: yes
+
+    # Tarea 4: Actualizar caché nuevamente (con EPEL)
+    - name: Actualizar caché con EPEL
+      dnf:
+        update_cache: yes
+      when: epel_result is success
+
+    # Tarea 5: Instalar paquetes extra (si EPEL está disponible)
+    - name: Instalar paquetes extra desde EPEL
+      dnf:
+        name: "{{ extra_tools }}"
+        state: present
+      when: epel_result is success
+      register: extra_result
+      ignore_errors: yes
+
+    # Tarea 6: Verificar instalación de tmux
+    - name: Verificar tmux
+      command: tmux -V
+      register: tmux_check
+      changed_when: False
+      failed_when: False
+
+    # Tarea 7: Resumen final
+    - name: Mostrar resumen de instalación
+      debug:
+        msg: |
+          ✅ {{ inventory_hostname }} - Instalación completada
+          ================================================
+          
+          📦 Herramientas base ({{ base_tools | length }}):
+          {% for tool in base_tools %}
+          ✅ {{ tool }}
+          {% endfor %}
+          
+          {% if epel_result is success %}
+          📦 Herramientas extra (EPEL):
+          {% for tool in extra_tools %}
+          ✅ {{ tool }}
+          {% endfor %}
+          {% else %}
+          ⚠️ EPEL no disponible - paquetes extra omitidos
+          {% endif %}
+          
+          {% if tmux_check.rc == 0 %}
+          ✅ tmux {{ tmux_check.stdout }} - OK
+          {% else %}
+          ❌ tmux NO INSTALADO
+          {% endif %}

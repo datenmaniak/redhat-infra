@@ -130,8 +130,6 @@ La empresa adquirió un nuevo servidor de almacenamiento. Te entregan un disco v
 
 Antes de tocar la VM, apágala y crea el nuevo disco desde tu Bazzite host:
 
-bash
-
 
 
 ```bash
@@ -157,7 +155,43 @@ lsblk
 
 > **Snapshot antes de empezar:** `virsh snapshot-create-as alma-rhcsa pre-mision2`
 
-------
+
+
+## Prerequisitos
+
+Necesita uno o más discos sin particionar o particiones sin usar. Compruebe lo que está disponible:
+
+```bash
+# List all block devices
+
+lsblk
+
+# Check for unused disks
+lsblk -f
+```
+
+
+
+## Instalar herrramientas LVM
+
+Las herramientas LVM se incluyen en la instalación base de RHEL, pero verifique si existe:
+
+```bash
+# Ensure LVM packages are installed
+sudo yum list installed | grep lvm2
+```
+```text
+Si el paquete está instalado: Verás una línea que contiene lvm2.x86_64 o similar, indicando que las herramientas están en el sistema.
+
+Si no está instalado: El comando no mostrará ningún resultado. En ese caso, puedes instalarlo fácilmente con:
+```
+```bash
+sudo dnf install lvm2 -y
+```
+
+
+
+---
 
 ## 🧩 Las 5 Tareas de la Misión
 

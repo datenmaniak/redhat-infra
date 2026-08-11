@@ -338,3 +338,167 @@ Cuando termines esta misión y la documentes, hay dos caminos:
 - **Camino B (amplitud):** Misión 2 — Redes. `nmcli`, bonding, VLANs, `firewalld` zones, y port forwarding.
 
 ¿Cuál prefieres? O si quieres, te doy **ambas** y tú eliges el orden.
+
+
+
+###  Antes de avanzar a la siguiente misión. 
+
+---
+
+
+
+> 1. Es necesario comprender la parte de semanage y restorecon. 
+> 2. El acceso SSH con el usuario no es posible. se produce este mensaje: **operator@192.168.122.193: Permission denied (publickey,gssapi-keyex,gssapi-with-mic)**.
+
+
+
+Hay **dos temas distintos** aquí. Vamos despacio, uno por uno, porque entenderlos te ahorrará horas de frustración en el futuro.
+
+------
+
+## 1. El Usuario `operator` y el Error de SSH
+
+### ¿Qué está pasando exactamente?
+
+Tu servidor SSH está configurado con tres restricciones que actúan como filtros en serie. Cuando intentas entrar como `operator`, la conexión muere antes de siquiera preguntarte por una contraseña. Esto es **por diseño**, no por bug.
+
+Imagina la entrada de un edificio con tres guardias:
+
+1. **Guardia "AllowUsers":** Tiene una lista de nombres. Si no estás en la lista, ni te deja pasar al vestíbulo. En tu configuración, la lista solo dice `labadmin` y `dev01`. `operator` no está.
+2. **Guardia "PasswordAuthentication no":** Aunque pasaras el primero, este guardia dice "aquí no aceptamos passwords, solo tarjetas de acceso (claves SSH)". Ni siquiera mira passwords.
+3. **Guardia "operator no tiene tarjeta":** El usuario `operator` fue creado con `useradd`, pero nunca se le generó un par de claves SSH ni se le copió una clave pública a su directorio `~/.ssh/authorized_keys`. No tiene "tarjeta de acceso".
+
+El mensaje `Permission denied (publickey,gssapi-keyex,gssapi-with-mic)` es el servidor diciendo: *"Te ofrecí estos métodos de autenticación (clave pública, GSSAPI), tú no pudiste presentar una credencial válida, y no te voy a ofrecer password porque está desactivado. Adiós."*
+
+### ¿Cómo se resuelve?
+
+Tienes **dos filosofías** para `operator`:
+
+**Opción A: Operator es remoto (puede entrar por SSH)** Si tu diseño de seguridad permite que `operator` administre el servidor desde tu estación Bazzite, debes hacer dos cosas:
+
+- Añadir `operator` a la directiva `AllowUsers` en `/etc/ssh/sshd_config`.
+- Colocar una **clave pública válida** en el archivo `/home/operator/.ssh/authorized_keys` dentro de la VM. Puedes copiar la misma clave pública que usas para `labadmin`, o generar un par nuevo.
+
+**Opción B: Operator es local (más restrictivo, más realista)** En muchas empresas, `operator` es una cuenta de servicio que nunca entra por red. Solo se usa cuando alguien con más privilegios (como `dev01`) hace `su - operator` para ejecutar tareas específicas. En ese caso, `operator` **no debería estar en `AllowUsers`**, y la verificación del ejercicio se hace directamente en la consola de la VM, no desde Bazzite.
+
+
+
+> **Mi error de diseño en el ejercicio:** Te pedí verificar `ssh operator@<ip>` en la Tarea 5, pero en la Tarea 3 solo permití `labadmin` y `dev01`. Esa inconsistencia es mía. Elige la opción que prefieras para tu Laboratorio.
+
+
+
+
+------
+
+## 2. `semanage fcontext` vs `restorecon`
+
+Este es el corazón de SELinux. Piensa en SELinux como un **sistema de permisos que no mira usuarios, mira etiquetas**.
+
+### El Problema que Resuelven
+
+Cuando creaste el directorio `/webdata`, el sistema le puso una etiqueta por defecto. Probablemente algo como `unlabeled_t` o `default_t`. Nginx, por su parte, corre con una etiqueta de proceso llamada `httpd_t`.
+
+SELinux tiene una regla interna que dice: *"El proceso `httpd_t` puede leer archivos etiquetados como `httpd_sys_content_t`, pero NO puede leer archivos `default_t` o `unlabeled_t`."*
+
+Entonces, aunque los permisos de Unix (`chmod 777`) digan "todo el mundo puede leer", SELinux dice: *"Yo no conozco a 'todo el mundo'. Conozco etiquetas. Y esta etiqueta me dice que no debo dejar pasar a Nginx."*
+
+### ¿Qué hace `semanage fcontext`?
+
+Es el **urbanizador**. Es la autoridad que cambia la zonificación del terreno.
+
+Cuando ejecutas:
+
+```plain
+semanage fcontext -a -t httpd_sys_content_t "/webdata(/.*)?"
+```
+
+lo que estás haciendo es escribir en la base de datos permanente de SELinux (el archivo `/etc/selinux/targeted/contexts/files/file_contexts.local`). Estás diciendo:
+
+> *"A partir de ahora, todo archivo o directorio que se cree dentro de `/webdata` debe considerarse territorio de servidores web. Su etiqueta por defecto será `httpd_sys_content_t`."*
+
+**Pero aquí está el truco:** `semanage` no toca los archivos que ya existen. Es una regla para el futuro. Es como cambiar la ley de tránsito: la ley nueva no le quita las multas pasadas a los conductores.
+
+### ¿Qué hace `restorecon`?
+
+Es el **inspector que pega etiquetas**. Recorre el directorio y le pregunta a la base de datos de `semanage`: *"¿Qué etiqueta le corresponde a este archivo?"* Y luego pega la etiqueta físicamente en el archivo.
+
+Cuando ejecutas:
+
+
+
+```plain
+restorecon -Rv /webdata
+```
+
+estás diciendo:
+
+> *"Ve a `/webdata`, revisa cada archivo y directorio contra las reglas del urbanizador, y ponles la etiqueta correcta."*
+
+El flag `-R` es **recursivo** (entra en subdirectorios). El flag `-v` es **verbose** (te muestra qué cambió).
+
+### La Analogía del Barrio
+
+Imagina que compras una casa en una calle que antes era industrial y ahora es residencial.
+
+- **`semanage fcontext`** = El ayuntamiento cambia la ley: *"Esta calle es residencial"*. Eso afecta a las casas que se construyan mañana. Pero tu casa, construida ayer, sigue sin número y sin buzón.
+- **`restorecon`** = El cartero municipal pasa casa por casa y pone el número y el buzón según la nueva ley. Ahora tu casa tiene la etiqueta correcta.
+- **Archivos nuevos después de `semanage`** = Si mañana construyes un garaje, ya sale con número y buzón automáticamente, porque la ley del ayuntamiento está vigente.
+
+### ¿Por qué necesitas ambos?
+
+
+
+| Si solo haces `semanage`                                     | Si solo haces `restorecon`                                   |
+| :----------------------------------------------------------- | :----------------------------------------------------------- |
+| Los archivos nuevos en `/webdata` tendrán la etiqueta correcta. | Los archivos actuales quedan bien.                           |
+| Pero `index.html` (que ya existía) sigue con la etiqueta vieja. Nginx sigue sin poder leerlo. | Pero si reinicias y SELinux re-etiqueta todo el sistema (`touch /.autorelabel`), perderás el cambio porque no está en la base de datos permanente. |
+| **Resultado:** Nginx falla ahora, pero funcionaría si recrearas el archivo. | **Resultado:** Funciona ahora, pero puede romperse tras un reboot o autorelabel. |
+
+**Por eso el orden siempre es:**
+
+1. Crear el directorio y archivos.
+2. `semanage fcontext` (la ley nueva).
+3. `restorecon` (aplicar la ley a lo existente).
+
+### ¿Cómo verificas que quedó bien?
+
+Dentro de la VM, ejecuta:
+
+```plain
+ls -Z /webdata
+```
+
+Debes ver algo como:
+
+```plain
+system_u:object_r:httpd_sys_content_t:s0 index.html
+```
+
+Y si miras el proceso de Nginx:
+
+
+
+```plain
+ps -eZ | grep nginx
+```
+
+Debes ver:
+
+```plain
+system_u:system_r:httpd_t:s0 nginx
+```
+
+Cuando el proceso (`httpd_t`) y el archivo (`httpd_sys_content_t`) comparten la "familia" `httpd`, SELinux permite la lectura. Si ves `default_t` o `unlabeled_t` en el archivo, SELinux está bloqueando.
+
+------
+
+## ¿Qué Hacer Ahora?
+
+Te propongo dos caminos:
+
+**Si quieres seguir el ejercicio al pie de la letra:** Arregla el acceso de `operator` añadiéndolo a `AllowUsers` y dándole una clave pública. Luego verifica que `sudo systemctl restart nginx` funcione y `sudo whoami` falle.
+
+**Si quieres entender más antes de tocar:** Dime si la analogía del urbanizador te ayudó a visualizar `semanage`/`restorecon`, y si prefieres que `operator` sea un usuario remoto o local en tu lab. Con eso ajustamos el ejercicio y pasamos a la siguiente misión.
+
+¿Te quedó clara la diferencia entre la "ley" (`semanage`) y el "pegado de etiquetas" (`restorecon`)?
+

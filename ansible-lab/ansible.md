@@ -215,7 +215,7 @@ ansible-playbook -i inventory.ini update_system.yml
 
 ------
 
-## 🎯 Conclusión 
+### 🎯 Conclusión acerca de los playbooks
 
 **NO son redundantes**, pero tienen **solapamiento mínimo** que puede optimizarse:
 
@@ -230,6 +230,8 @@ ansible-playbook -i inventory.ini update_system.yml
 
 
 
+
+
 > ## Qué se necesita para ejecutar cualquier de los  playbook a determinado host?
 
 
@@ -240,7 +242,8 @@ ansible-playbook -i inventory.ini update_system.yml
 [targets]
 alma-rhcsa ansible_host=192.168.122.193
 alma-target-02 ansible_host=192.168.122.67
-alma-alma-security ansible_host=192.168.122.149
+alma-security ansible_host=192.168.122.149
+freeipa-lab  ansible_host=192.168.122.143
 
 [targets:vars]
 ansible_user=labadmin
@@ -312,20 +315,30 @@ ansible-playbook -i inventory.ini update_repos.yml --tags "clean"
 
 ### **Opción A: Crear Grupos para Mayor Flexibilidad**
 
-#### inventory.ini      
+#### inventory-grouped.ini      
 
 ```
 [targets]
 alma-rhcsa ansible_host=192.168.122.193
 alma-target-02 ansible_host=192.168.122.67
-alma-alma-security ansible_host=192.168.122.149
+alma-security ansible_host=192.168.122.149
+freeipa-lab  ansible_host=192.168.122.143
+
+[rhcsa]
+alma-rhcsa
+
+[rhce]
+alma-target-02
+
+[security]
+alma-security
 
 [production]
 alma-rhcsa
 alma-target-02
 
-[security]
-alma-alma-security
+[freeipa]
+freeipa-lab
 
 [all:vars]
 ansible_user=labadmin
@@ -342,17 +355,24 @@ update_serial=3  # En seguridad podemos actualizar de a 3
 
 
 
-**Uso con grupos:**
+​	📝    **[Explicación de los nombres de host][/docs/roadmap.md#2-arquitectura-de-vms-para-16-gb-ram--6-cores]**
+
+
+
+**Actualización de los repositorios usando los  grupos:**
 
 ```
 # Actualizar solo producción
-ansible-playbook -i inventory.ini update_system.yml -l production
+ansible-playbook -i inventory-grouped.ini update_repos.yml -l production
 
 # Actualizar solo servidores de seguridad
-ansible-playbook -i inventory.ini update_system.yml -l security
+ansible-playbook -i inventory-grouped.ini update_repos.yml -l security  
+
+# Actualizar solo servidor principal
+ansible-playbook -i inventory-grouped.ini update_repos.yml -l rhcsa
 
 # Actualizar todos
-ansible-playbook -i inventory.ini update_system.yml
+ansible-playbook -i inventory-grouped.ini update_repos.yml
 ```
 
 

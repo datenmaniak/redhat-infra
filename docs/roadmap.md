@@ -822,6 +822,11 @@ ansible -i inventory.ini all -m ping
 ```
 
 > Las IPs las obtienes con `virsh domifaddr <vm-name>`.
+>
+
+#### [Instalación de Ansible (se recomienda)](/docs/deployment.md#alternativa-3-instalar-con-brew--recomendada)
+
+
 
 ------
 

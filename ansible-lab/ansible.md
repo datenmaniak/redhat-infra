@@ -570,7 +570,7 @@ ansible -i inventory-grouped.ini alma-rhcsa -m command -a "tmux -V"
 ansible -i inventory-grouped.ini alma-rhcsa -m command -a "rpm -q epel-release"
 
 # Ejecutar la instalacion de paquetes esenciales en modo (dry-run) --check
- ansible-playbook -i inventory-grouped.ini -l  postinstall_essentials_install.yml --check
+ ansible-playbook -i inventory-grouped.ini -l rhcsa postinstall_essentials_install.yml --check
  
 # Verificar previamente antes de instalar paquetes para los grupos: production & security
 ansible-playbook -i inventory-grouped.ini -l production,security postinstall_essentials_install.yml --check

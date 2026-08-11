@@ -222,3 +222,119 @@ Desde tu Bazzite host:
 - No olvides `systemctl restart nginx` y revisar `journalctl -u nginx` si falla.
 
 </details>
+
+
+
+## ✅ Solución Paso a Paso (Lee solo al final)
+
+<details> <summary><b>Desplegar solución completa</b></summary>
+
+### Tarea 1
+
+
+
+```bash
+sudo groupadd webdev
+sudo useradd -G webdev -m -s /bin/bash dev01
+sudo useradd -m -s /bin/bash operator
+echo "Changeme2026!" | sudo passwd --stdin dev01
+echo "Changeme2026!" | sudo passwd --stdin operator
+sudo chage -M 90 dev01
+sudo chage -M 90 operator
+```
+
+### Tarea 2
+
+
+
+```bash
+sudo visudo -f /etc/sudoers.d/dev01
+# Contenido:
+dev01 ALL=(ALL) NOPASSWD: ALL
+
+sudo visudo -f /etc/sudoers.d/operator
+# Contenido:
+operator ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx, /usr/bin/systemctl reload nginx
+```
+
+### Tarea 3
+
+```bash
+sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+sudo sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+echo "AllowUsers labadmin dev01" | sudo tee -a /etc/ssh/sshd_config
+sudo systemctl restart sshd
+```
+
+### Tarea 4
+
+```bash
+sudo mkdir -p /webdata
+sudo tee /webdata/index.html << 'EOF'
+<html><body><h1>Mision 1: Completada</h1></body></html>
+EOF
+sudo chown -R root:webdev /webdata
+sudo chmod 2775 /webdata  # SGID para que archivos nuevos hereden grupo webdev
+sudo semanage fcontext -a -t httpd_sys_content_t "/webdata(/.*)?"
+sudo restorecon -Rv /webdata
+
+# Editar Nginx
+sudo sed -i 's|/usr/share/nginx/html|/webdata|g' /etc/nginx/nginx.conf
+sudo sed -i 's|/usr/share/nginx/html|/webdata|g' /etc/nginx/conf.d/default.conf 2>/dev/null || true
+sudo systemctl restart nginx
+sudo systemctl enable nginx
+```
+
+### Tarea 5 (Verificación)
+
+
+
+```bash
+# Desde Bazzite:
+ssh dev01@<ip> "sudo systemctl status nginx --no-pager"
+curl http://<ip>
+ssh root@<ip>  # Debe fallar
+ssh operator@<ip> "sudo whoami"  # Debe fallar
+ssh operator@<ip> "sudo systemctl restart nginx"  # Debe funcionar
+```
+
+</details>
+
+------
+
+## 📊 ¿Qué Áreas del RHCSA Cubriste Aquí?
+
+
+
+| Área del Examen                     | Peso Aprox. | Tarea donde la practicaste |
+| :---------------------------------- | :---------- | :------------------------- |
+| Gestión de usuarios y grupos        | 10%         | Tarea 1                    |
+| Sudoers avanzado                    | 10%         | Tarea 2                    |
+| Configuración de SSH                | 10%         | Tarea 3                    |
+| SELinux (contextos, booleans)       | 15%         | Tarea 4                    |
+| Gestión de servicios (systemd)      | 10%         | Tarea 4                    |
+| Permisos de archivos (SGID, grupos) | 10%         | Tarea 4                    |
+
+**Total cubierto en una sola sesión:** ~65% de los objetivos operativos del RHCSA.
+
+------
+
+## 📝 Bitácora del Día 1
+
+Escribe en tu archivo de notas:
+
+1. ¿Qué comando te costó más recordar?
+2. ¿Qué error te dio Nginx antes de funcionar? (`journalctl -u nginx` te lo dijo)
+3. ¿Por qué `restorecon` fue necesario aunque `semanage fcontext` ya había configurado el tipo?
+
+------
+
+## 🚀 Próximo Paso
+
+Cuando termines esta misión y la documentes, hay dos caminos:
+
+- **Camino A (profundidad):** Misión 2 — Almacenamiento. LVM, particiones, montajes persistentes, ACLs extendidas, y quotas de disco.
+- **Camino B (amplitud):** Misión 2 — Redes. `nmcli`, bonding, VLANs, `firewalld` zones, y port forwarding.
+
+¿Cuál prefieres? O si quieres, te doy **ambas** y tú eliges el orden.

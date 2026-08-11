@@ -106,3 +106,119 @@ Dime:
 1. **¿Las 4 VMs pasaron el smoke test?** (SSH, internet, disco resize, repos)
 2. **¿Ya creaste los snapshots base?**
 3. **¿Quieres que te sugiera el primer ejercicio detallado de RHCSA**, o prefieres saltar directo a configurar `alma-security` para el módulo de hardening?
+
+
+
+> ## Todas pasaron el smoke test y  snapshots creados. Prosigamos con el plan. Adelante con el primer ejercicio de RHCSA.
+
+
+
+# 🎯 Misión 1: "El Administrador Heredó un Servidor"
+
+## El Escenario
+
+Llegas el lunes a tu nuevo trabajo. El administrador anterior renunció el viernes y dejó una VM `alma-rhcsa` con un servidor web Nginx instalado pero **sin configurar seguridad**. Tu jefe te da 3 requisitos:
+
+> 1. *"Solo el equipo de desarrollo puede publicar contenido web."*
+> 2. *"Nadie entra como root por SSH, y solo desde nuestra estación de administración."*
+> 3. *"El servidor web debe servir contenido desde `/webdata`, no desde `/usr/share/nginx/html`."*
+
+Este ejercicio no es un tutorial de Nginx. Es un ejercicio de **administración Linux integrada**. Toca 6 áreas del RHCSA en una sola sesión.
+
+------
+
+## 📋 Checklist Antes de Empezar
+
+
+
+```bash
+# En tu Bazzite host, verifica que estás en el snapshot limpio
+virsh snapshot-list alma-rhcsa
+# Debe mostrar: factory, ready
+
+# Si no estás en 'ready', vuelve a él
+virsh snapshot-revert alma-rhcsa ready
+```
+
+**Tiempo estimado:** 60-90 minutos.
+**Si te atascas más de 20 minutos en un paso:** lee la pista. No mires la solución completa de inmediato.
+
+------
+
+## 🧩 Las 5 Tareas de la Misión
+
+### Tarea 1: Usuarios y Grupos
+
+Crea la estructura de acceso:
+
+- Grupo `webdev` (los que publican)
+- Usuario `dev01` (miembro de `webdev`)
+- Usuario `operator` (no es miembro de `webdev`, solo opera servicios)
+- Contraseñas: `Changeme2026!` para ambos (expiran en 90 días)
+
+### Tarea 2: Directiva de Sudo
+
+- `dev01` puede ejecutar **cualquier comando** como root (desarrollador senior).
+- `operator` solo puede reiniciar y recargar Nginx. Nada más.
+
+### Tarea 3: Hardening de SSH
+
+- Root no puede entrar por SSH (ni por clave ni por password).
+- Solo el usuario `labadmin` (el que creó cloud-init) y `dev01` pueden entrar.
+- Autenticación por clave pública **obligatoria** para todos (deshabilita password auth).
+
+### Tarea 4: Nginx en `/webdata` con SELinux
+
+- Crea el directorio `/webdata` con permisos correctos.
+- Configura Nginx para servir desde `/webdata` en lugar de `/usr/share/nginx/html`.
+- **No desactives SELinux.** Enforcing debe permanecer activo. El sitio debe servirse sin errores de denegación.
+
+### Tarea 5: Verificación Final
+
+Desde tu Bazzite host:
+
+1. `ssh dev01@<ip>` → debe funcionar con clave.
+2. `sudo systemctl restart nginx` → debe funcionar sin pedir password (si configuraste NOPASSWD).
+3. `curl http://<ip>` → debe mostrar el contenido de `/webdata/index.html`.
+4. `ssh root@<ip>` → debe **rechazar** inmediatamente.
+5. `ssh operator@<ip>` → `sudo systemctl restart nginx` funciona, pero `sudo whoami` **debe fallar**.
+
+------
+
+
+
+## 💡 Pistas por Tarea (Léelas solo si te atascas)
+
+<details> <summary><b>Pista Tarea 1: Usuarios</b></summary>
+
+- `groupadd`, `useradd -G`, `passwd`, `chage`
+- El parámetro de expiración de contraseña se configura con `chage -M 90 <usuario>` o en `/etc/login.defs` (pero `chage` es inmediato para usuarios existentes).
+
+</details>
+
+<details> <summary><b>Pista Tarea 2: Sudo</b></summary>
+
+- Crea archivos en `/etc/sudoers.d/`, no edites `/etc/sudoers` directamente.
+- Para `operator`, necesitas restringir los argumentos de `systemctl`. Investiga la sintaxis `Cmnd_Alias` o la línea directa: `operator ALL=(ALL) /usr/bin/systemctl restart nginx, /usr/bin/systemctl reload nginx`
+- `visudo -f /etc/sudoers.d/operator` valida sintaxis al guardar.
+
+</details>
+
+<details> <summary><b>Pista Tarea 3: SSH</b></summary>
+
+- Archivo: `/etc/ssh/sshd_config`
+- Directivas clave: `PermitRootLogin`, `PasswordAuthentication`, `AllowUsers`
+- Después de editar: `systemctl restart sshd` (o `sshd` se reinicia solo en algunas configs, pero mejor forzar).
+- **Trampa:** Si bloqueas a `labadmin` en `AllowUsers` y estás conectado como `labadmin`, tu sesión actual no se cae, pero la siguiente sí. Ten cuidado.
+
+</details>
+
+<details> <summary><b>Pista Tarea 4: SELinux + Nginx</b></summary>
+
+- `semanage fcontext -a -t httpd_sys_content_t "/webdata(/.*)?"` → hace el cambio persistente.
+- `restorecon -Rv /webdata` → aplica el contexto ahora.
+- `setsebool -P httpd_enable_homedirs on` no es necesario aquí, pero investiga `httpd_sys_content_t`.
+- Para mover el root de Nginx: edita `/etc/nginx/nginx.conf` o el default server block en `/etc/nginx/conf.d/default.conf`.
+- No olvides `systemctl restart nginx` y revisar `journalctl -u nginx` si falla.
+
+</details>

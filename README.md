@@ -14,7 +14,7 @@ Siendo breve, los  enlaces a la acción inmediata.
 - [Despliegue elegido](docs/deployment.md)
 - [Alternativa Proxmox](docs/proxmox-deploy.md)
 - [Ansible](./ansible-lab/ansible.md)
-- [Post Install](docs/post-install.md)
+- [Post Install / Primera Misión ](docs/post-install.md)
 
 
 ---

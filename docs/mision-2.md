@@ -273,6 +273,7 @@ En `/data/web`:
 - `dnf install nfs-utils`
 - `/etc/exports`: `/data/web 192.168.122.0/24(rw,sync,no_root_squash)`
 - `exportfs -a`
+- sudo dnf install firewalld -y
 - `systemctl enable --now nfs-server`
 - `firewall-cmd --permanent --add-service=nfs`
 - `firewall-cmd --permanent --add-service=rpc-bind`

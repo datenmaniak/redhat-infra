@@ -347,3 +347,8 @@ Con almacenamiento dominado, te quedan dos bloques para completar el RHCSA:
 - **Procesos y contenedores:** systemd timers, cron, `journalctl`, logrotate, Podman rootless.
 
 ¿Cuál prefieres para la **Misión 3**, o quieres que te dé un **simulacro de examen RHCSA** que combine Misión 1 + Misión 2 para ver si estás listo?
+
+
+
+> ### En lugar de avanzar a la misión 3, se hará el simulacro de examen RHCSA. Al terminar y revisar los resultados del examen, pasaremos a la misión 3.
+

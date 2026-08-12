@@ -181,9 +181,13 @@ Las herramientas LVM se incluyen en la instalación base de RHEL, pero verifique
 sudo yum list installed | grep lvm2
 ```
 ```text
-Si el paquete está instalado: Verás una línea que contiene lvm2.x86_64 o similar, indicando que las herramientas están en el sistema.
+Si el paquete está instalado: Verás una línea que 
+contiene lvm2.x86_64 o similar, indicando que las 
+herramientas están en el sistema.
 
-Si no está instalado: El comando no mostrará ningún resultado. En ese caso, puedes instalarlo fácilmente con:
+Si no está instalado: El comando no mostrará
+ningún resultado. En ese caso, puedes instalarlo
+fácilmente con:
 ```
 ```bash
 sudo dnf install lvm2 -y

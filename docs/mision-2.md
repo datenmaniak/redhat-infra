@@ -308,3 +308,42 @@ En `/data/web`:
 - `repquota -a`
 
 </details>
+
+
+
+## 📊 ¿Qué Áreas del RHCSA Cubriste Aquí?
+
+
+
+| Área del Examen                               | Peso Aprox. | Tarea donde la practicaste |
+| :-------------------------------------------- | :---------- | :------------------------- |
+| LVM (PV, VG, LV, extender, reducir, snapshot) | 15%         | Tareas 1-2                 |
+| Sistemas de archivos (ext4, XFS, fstab, UUID) | 10%         | Tarea 1                    |
+| NFS (servidor y cliente)                      | 5%          | Tarea 3                    |
+| autofs                                        | 5%          | Tarea 4                    |
+| ACLs extendidas (setfacl/getfacl)             | 5%          | Tarea 5                    |
+| Quotas de disco                               | 5%          | Tarea 5                    |
+
+**Total acumulado con Misión 1 + Misión 2:** ~85% de los objetivos operativos del RHCSA.
+
+------
+
+## 📝 Bitácora del Día 2
+
+Escribe en tu archivo de notas:
+
+1. ¿Por qué `resize2fs` funciona online en ext4 pero para reducir necesitas desmontar?
+2. ¿Qué diferencia hay entre un snapshot de LVM y una copia de seguridad tradicional?
+3. ¿Por qué `autofs` es preferible a `/etc/fstab` para montajes NFS en estaciones de trabajo?
+4. ¿Qué pasa si `dev01` supera el límite soft de quota pero no el hard? ¿Y si supera el hard?
+
+------
+
+## 🚀 Próximo Paso
+
+Con almacenamiento dominado, te quedan dos bloques para completar el RHCSA:
+
+- **Redes profundas:** `nmcli`, bonding, VLANs, `firewalld` avanzado, port forwarding, `chrony`.
+- **Procesos y contenedores:** systemd timers, cron, `journalctl`, logrotate, Podman rootless.
+
+¿Cuál prefieres para la **Misión 3**, o quieres que te dé un **simulacro de examen RHCSA** que combine Misión 1 + Misión 2 para ver si estás listo?
